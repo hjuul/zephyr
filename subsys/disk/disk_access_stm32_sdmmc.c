@@ -218,23 +218,34 @@ static struct disk_info stm32_sdmmc_info = {
 	.ops = &stm32_sdmmc_ops,
 };
 
+/*
+ * Check if the card is present or not. If no card detect gpio is set, assume
+ * the card is present. If reading the gpio fails for some reason, assume the
+ * card is there.
+ */
+static bool stm32_sdmmc_card_present(struct stm32_sdmmc_priv *priv)
+{
+	int err;
+
+	if (!priv->cd.name) {
+		return true;
+	}
+
+	err = gpio_pin_get(priv->cd.port, priv->cd.pin);
+	if (err < 0) {
+		LOG_WRN("reading card detect failed %d", err);
+		return true;
+	}
+	return err;
+}
+
 static void stm32_sdmmc_cd_handler(struct k_work *item)
 {
 	struct stm32_sdmmc_priv *priv = CONTAINER_OF(item,
 						     struct stm32_sdmmc_priv,
 						     work);
-	int val;
 
-	if (!priv->cd.port) {
-		return;
-	}
-
-	val = gpio_pin_get(priv->cd.port, priv->cd.pin);
-	if (val < 0) {
-		return;
-	}
-
-	if (val) {
+	if (stm32_sdmmc_card_present(priv)) {
 		LOG_DBG("card inserted");
 		priv->status = DISK_STATUS_UNINIT;
 	} else {
@@ -258,6 +269,10 @@ static void stm32_sdmmc_cd_callback(struct device *gpiodev,
 static int stm32_sdmmc_card_detect_init(struct stm32_sdmmc_priv *priv)
 {
 	int err;
+
+	if (!priv->cd.name) {
+		return 0;
+	}
 
 	priv->cd.port = device_get_binding(priv->cd.name);
 	if (!priv->cd.port) {
@@ -294,6 +309,10 @@ remove_callback:
 
 static int stm32_sdmmc_card_detect_uninit(struct stm32_sdmmc_priv *priv)
 {
+	if (!priv->cd.name) {
+		return 0;
+	}
+
 	gpio_pin_interrupt_configure(priv->cd.port, priv->cd.pin,
 				     GPIO_INT_MODE_DISABLED);
 	gpio_pin_configure(priv->cd.port, priv->cd.pin, GPIO_DISCONNECTED);
@@ -352,10 +371,7 @@ static int disk_stm32_sdmmc_init(struct device *dev)
 		goto err_card_detect;
 	}
 
-	err = gpio_pin_get(priv->cd.port, priv->cd.pin);
-	if (err < 0) {
-		goto err_pwr;
-	} else if (err) {
+	if (stm32_sdmmc_card_present(priv)) {
 		priv->status = DISK_STATUS_UNINIT;
 	} else {
 		priv->status = DISK_STATUS_NOMEDIA;
@@ -386,11 +402,13 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 		.Init.HardwareFlowControl = SDMMC_HARDWARE_FLOW_CONTROL_DISABLE,
 		.Init.ClockDiv = 0,
 	},
+#if DT_INST_NODE_HAS_PROP(0, cd_gpios)
 	.cd = {
 		.name = DT_INST_GPIO_LABEL(0, cd_gpios),
 		.pin = DT_INST_GPIO_PIN(0, cd_gpios),
 		.flags = DT_INST_GPIO_FLAGS(0, cd_gpios),
 	},
+#endif
 #if DT_INST_NODE_HAS_PROP(0, pwr_gpios)
 	.pe = {
 		.name = DT_INST_GPIO_LABEL(0, pwr_gpios),
