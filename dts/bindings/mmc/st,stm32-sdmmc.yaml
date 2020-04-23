@@ -16,5 +16,5 @@ properties:
         description: Card Detect pin
     pwr-gpios:
         type: phandle-array
-        required: true
+        required: false
         description: Power pin

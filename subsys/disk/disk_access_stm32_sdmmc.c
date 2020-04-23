@@ -305,6 +305,10 @@ static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
 {
 	int err;
 
+	if (!priv->pe.name) {
+		return 0;
+	}
+
 	priv->pe.port = device_get_binding(priv->pe.name);
 	if (!priv->pe.port) {
 		return -ENODEV;
@@ -323,6 +327,10 @@ static int stm32_sdmmc_pwr_init(struct stm32_sdmmc_priv *priv)
 
 static int stm32_sdmmc_pwr_uninit(struct stm32_sdmmc_priv *priv)
 {
+	if (!priv->pe.name) {
+		return 0;
+	}
+
 	gpio_pin_configure(priv->pe.port, priv->pe.pin, GPIO_DISCONNECTED);
 	return 0;
 }
@@ -383,11 +391,13 @@ static struct stm32_sdmmc_priv stm32_sdmmc_priv_1 = {
 		.pin = DT_INST_GPIO_PIN(0, cd_gpios),
 		.flags = DT_INST_GPIO_FLAGS(0, cd_gpios),
 	},
+#if DT_INST_NODE_HAS_PROP(0, pwr_gpios)
 	.pe = {
 		.name = DT_INST_GPIO_LABEL(0, pwr_gpios),
 		.pin = DT_INST_GPIO_PIN(0, pwr_gpios),
 		.flags = DT_INST_GPIO_FLAGS(0, pwr_gpios),
 	},
+#endif
 	.pclken = {
 		.bus = DT_INST_CLOCKS_CELL(0, bus),
 		.enr = DT_INST_CLOCKS_CELL(0, bits),
