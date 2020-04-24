@@ -188,5 +188,12 @@
 				#pwm-cells = <2>;
 			};
 		};
+
+		sdmmc1: sdmmc1 {
+			compatible = "st,stm32-sdmmc";
+			clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00000400>;
+			status = "disabled";
+			label = "SDMMC1";
+		};
 	};
 };
