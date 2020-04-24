@@ -40,6 +40,7 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 {
 	struct device *clock;
 
+#ifndef CONFIG_SOC_SERIES_STM32F7X
 	LL_RCC_PLLSAI1_Disable();
 	/* Configure PLLSA11 to enable 48M domain */
 	LL_RCC_PLLSAI1_ConfigDomain_48M(LL_RCC_PLLSOURCE_HSI,
@@ -57,12 +58,12 @@ static int stm32_sdmmc_clock_enable(struct stm32_sdmmc_priv *priv)
 		;
 
 	LL_RCC_SetSDMMCClockSource(LL_RCC_SDMMC1_CLKSOURCE_PLLSAI1);
+#endif
 
 	clock = device_get_binding(STM32_CLOCK_CONTROL_NAME);
 	if (!clock) {
 		return -ENODEV;
 	}
-
 	/* Enable the APB clock for stm32_sdmmc */
 	return clock_control_on(clock, (clock_control_subsys_t *)&priv->pclken);
 }
