@@ -1,0 +1,14 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		log_partition: partition@fc000 {
+			reg = <0x000fc000 0x00010000>; /* 64 KiB */
+		};
+	};
+};

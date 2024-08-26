@@ -1,0 +1,54 @@
+# Copyright (c) 2024 Nortek AS
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_BACKEND_FCB
+	bool "Flash Circular Buffer backend"
+	select LOG_OUTPUT
+	select FCB
+	help
+	  Use Flash Circular Buffer as a backend for logging.
+
+if LOG_BACKEND_FCB
+
+backend = FCB
+backend-str = fcb
+source "subsys/logging/Kconfig.template.log_format_config"
+
+config LOG_BACKEND_FCB_AUTOSTART
+	bool "Automatically start FCB backend"
+	default y
+	help
+	  When enabled automatically start the fcb backend on
+	  application start.
+
+config LOG_BACKEND_FCB_OVERWRITE
+	bool "Overwrite old logs when full"
+	default y
+	help
+	  When enabled backend overwrites oldest logs.
+	  In other case, when memory is full, new messages are dropped.
+
+
+config LOG_BACKEND_FCB_PARTITION
+	string "Flash partition name"
+	default "storage_partition"
+	help
+	  Partition where logs are stored. The value must match a partition node label
+	  that is defined as a fixed-partitions in the device tree.
+
+config LOG_BACKEND_FCB_MAX_SECTORS
+	int "Max number of sectors to use for FCB backend storage"
+	default 10
+	help
+	  The underlying storage for the FCB backend is defined as a fixed-partition
+	  node in the device tree, as specified by LOG_BACKEND_FCB_PARTITION. The
+	  number of sectors used by the FCB backend will be determined by the size 
+	  and sector size of that partition, but will be limited by this value.
+
+config LOG_BACKEND_FCB_MAX_MESSAGE_SIZE
+	int "Size of internal buffer for storing messages."
+	default 256
+	help
+	  This option defines maximum message size transferable to up-buffer.
+
+endif # LOG_BACKEND_FCB
